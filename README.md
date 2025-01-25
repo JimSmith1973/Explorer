@@ -1,1 +1,2 @@
-# Explorer
+# Template
+Template Windows Application
