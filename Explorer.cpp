@@ -7,19 +7,53 @@ FileListViewWindow g_fileListViewWindow;
 FolderTreeViewWindow g_folderTreeViewWindow;
 StatusBarWindow g_statusBarWindow;
 
-void TreeViewWindowSelectionChangedFunction( LPTSTR lpszItemText )
+void FileListViewWindowSelectionChangedFunction( LPCTSTR lpszItemPath )
 {
-	// Show item text on status bat window
-	g_statusBarWindow.SetText( lpszItemText );
+	// Show item path on status bar window
+	g_statusBarWindow.SetText( lpszItemPath );
 
-} // End of function TreeViewWindowSelectionChangedFunction
+} // End of function FileListViewWindowSelectionChangedFunction
 
-void TreeViewWindowDoubleClickFunction( LPTSTR lpszItemText )
+void FileListViewWindowDoubleClickFunction( LPCTSTR lpszItemPath )
+{
+	// Display item path
+	MessageBox( NULL, lpszItemPath, INFORMATION_MESSAGE_CAPTION, ( MB_OK | MB_ICONINFORMATION ) );
+
+} // End of function FileListViewWindowDoubleClickFunction
+
+void FolderTreeViewWindowSelectionChangedFunction( LPTSTR lpszItemText )
+{
+	int nFileCount;
+
+	// Allocate string memory
+	LPTSTR lpszStatusMessage = new char[ STRING_LENGTH + sizeof( char ) ];
+
+	// Delete all items from file list view window
+	g_fileListViewWindow.DeleteAllItems();
+
+	// Show files on file list view window
+	nFileCount = g_fileListViewWindow.AddFiles( lpszItemText );
+
+	// Auto-size all file list view window columns
+	g_fileListViewWindow.AutoSizeAllColumns();
+
+	// Format status message
+	wsprintf( lpszStatusMessage, FILE_LIST_VIEW_WINDOW_CLASS_ADD_FILES_STATUS_MESSAGE_FORMAT_STRING, lpszItemText, nFileCount );
+
+	// Show status message on status bar window
+	g_statusBarWindow.SetText( lpszStatusMessage );
+
+	// Free string memory
+	delete [] lpszStatusMessage;
+
+} // End of function FolderTreeViewWindowSelectionChangedFunction
+
+void FolderTreeViewWindowDoubleClickFunction( LPTSTR lpszItemText )
 {
 	// Display item text
 	MessageBox( NULL, lpszItemText, INFORMATION_MESSAGE_CAPTION, ( MB_OK | MB_ICONINFORMATION ) );
 
-} // End of function TreeViewWindowDoubleClickFunction
+} // End of function FolderTreeViewWindowDoubleClickFunction
 
 void OpenFileFunction( LPCTSTR lpszFilePath )
 {
@@ -286,7 +320,7 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 				// Notify message is from folder tree view window
 
 				// Handle notify message from folder tree view window
-				if( !( g_folderTreeViewWindow.HandleNotifyMessage( wParam, lParam, &TreeViewWindowSelectionChangedFunction ) ) )
+				if( !( g_folderTreeViewWindow.HandleNotifyMessage( wParam, lParam, &FolderTreeViewWindowSelectionChangedFunction ) ) )
 				{
 					// Notify message was not handled from folder tree view window
 
@@ -296,6 +330,21 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 				} // End of notify message was not handled from folder tree view window
 
 			} // End of notify message is from folder tree view window
+			else if( lpNmHdr->hwndFrom == g_fileListViewWindow )
+			{
+				// Notify message is from file list view window
+
+				// Handle notify message from file list view window
+				if( !( g_fileListViewWindow.HandleNotifyMessage( wParam, lParam, &FileListViewWindowSelectionChangedFunction, &FileListViewWindowDoubleClickFunction ) ) )
+				{
+					// Notify message was not handled from file list view window
+
+					// Call default handler
+					lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
+
+				} // End of notify message was not handled from file list view window
+
+			} // End of notify message is from file list view window
 			else
 			{
 				// Notify message is not from folder tree view window
