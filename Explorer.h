@@ -12,6 +12,7 @@
 
 #include "..\Classes\ArgumentListClass.h"
 #include "..\Classes\DroppedFilesClass.h"
+#include "..\Classes\FileListViewWindowClass.h"
 #include "..\Classes\FolderTreeViewWindowClass.h"
 #include "..\Classes\FontClass.h"
 #include "..\Classes\MessageClass.h"
@@ -25,6 +26,8 @@
 #define MAIN_WINDOW_CLASS_MENU_NAME												MAKEINTRESOURCE( IDR_MAIN_MENU )
 
 #define MAIN_WINDOW_TEXT														"Explorer"
+
+#define FOLDER_TREE_VIEW_WINDOW_CLASS_WIDTH										300
 
 #define ABOUT_MESSAGE_TEXT														"Explorer\r\n"						\
 																				"\r\n"								\

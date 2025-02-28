@@ -4,7 +4,63 @@
 
 // Global variables
 FolderTreeViewWindow g_folderTreeViewWindow;
+FileListViewWindow g_fileListViewWindow;
 StatusBarWindow g_statusBarWindow;
+
+int CALLBACK FileListViewWindowCompareFunction( LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort )
+{
+	int nResult = 0;
+
+	// Allocate string memory
+	LPTSTR lpszItemText1 = new char[ STRING_LENGTH + sizeof( char ) ];
+	LPTSTR lpszItemText2 = new char[ STRING_LENGTH + sizeof( char ) ];
+
+	// Get first item text
+	g_fileListViewWindow.GetItemText( lParam1, lParamSort, lpszItemText1 );
+
+	// Get second item text
+	g_fileListViewWindow.GetItemText( lParam2, lParamSort, lpszItemText2 );
+
+	// Compare item texts
+	nResult = lstrcmpi( lpszItemText1, lpszItemText2 );
+
+	// Free string memory
+	delete [] lpszItemText1;
+	delete [] lpszItemText2;
+
+	return nResult;
+
+} // End of function FileListViewWindowCompareFunction
+
+void FileListViewWindowSelectionChangedFunction( LPCTSTR lpszItemPath )
+{
+	// Show item path on status bar window
+	g_statusBarWindow.SetText( lpszItemPath );
+
+} // End of function FileListViewWindowSelectionChangedFunction
+
+void FileListViewWindowDoubleClickFunction( LPCTSTR lpszItemPath )
+{
+	// Open item
+	if( ( INT_PTR )ShellExecute( NULL, SHELL_EXECUTE_OPEN_COMMAND, lpszItemPath, NULL, NULL, SW_SHOWDEFAULT ) <= SHELL_EXECUTE_MINIMUM_SUCCESS_RETURN_VALUE )
+	{
+		// Unable to open item
+
+		// Allocate string memory
+		LPTSTR lpszErrorMessage = new char[ STRING_LENGTH + sizeof( char ) ];
+
+		// Format error message
+		wsprintf( lpszErrorMessage, UNABLE_TO_OPEN_FILE_ERROR_MESSAGE_FORMAT_STRING, lpszItemPath );
+
+		// Display error message
+		MessageBox( NULL, lpszErrorMessage, ERROR_MESSAGE_CAPTION, ( MB_OK | MB_ICONERROR ) );
+
+		// Free string memory
+		delete [] lpszErrorMessage;
+
+	} // End of unable to open item
+
+} // End of function FileListViewWindowDoubleClickFunction
 
 void FolderTreeViewWindowSelectionChangedFunction( LPTSTR lpszItemText )
 {
@@ -79,15 +135,25 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 				// Set folder tree view window font
 				g_folderTreeViewWindow.SetFont( font );
 
-				// Create status bar window
-				if( g_statusBarWindow.Create( hWndMain, hInstance ) )
+				// Create file list view window
+				if( g_fileListViewWindow.Create( hWndMain, hInstance ) )
 				{
-					// Successfully created status bar window
+					// Successfully created file list view window
 
-					// Set status bar window font
-					g_statusBarWindow.SetFont( font );
+					// Set file list view window font
+					g_fileListViewWindow.SetFont( font );
 
-				} // End of successfully created status bar window
+					// Create status bar window
+					if( g_statusBarWindow.Create( hWndMain, hInstance ) )
+					{
+						// Successfully created status bar window
+
+						// Set status bar window font
+						g_statusBarWindow.SetFont( font );
+
+					} // End of successfully created status bar window
+
+				} // End of successfully created file list view window
 
 			} // End of successfully created folder tree view window
 
@@ -103,6 +169,8 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 			RECT rcStatus;
 			int nStatusWindowHeight;
 			int nControlWindowHeight;
+			int nFileListViewWindowWidth;
+			int nFileListViewWindowLeft;
 
 			// Store client width and height
 			nClientWidth	= ( int )LOWORD( lParam );
@@ -115,11 +183,16 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 			g_statusBarWindow.GetWindowRect( &rcStatus );
 
 			// Calculate window sizes
-			nStatusWindowHeight		= ( rcStatus.bottom - rcStatus.top );
-			nControlWindowHeight	= ( nClientHeight - nStatusWindowHeight );
+			nStatusWindowHeight			= ( rcStatus.bottom - rcStatus.top );
+			nControlWindowHeight		= ( nClientHeight - nStatusWindowHeight );
+			nFileListViewWindowWidth	= ( ( nClientWidth - FOLDER_TREE_VIEW_WINDOW_CLASS_WIDTH ) + WINDOW_BORDER_WIDTH );
+
+			// Calculate window positions
+			nFileListViewWindowLeft		= ( FOLDER_TREE_VIEW_WINDOW_CLASS_WIDTH - WINDOW_BORDER_WIDTH );
 
 			// Move folder tree view window
-			g_folderTreeViewWindow.Move( 0, 0, nClientWidth, nControlWindowHeight, TRUE );
+			g_folderTreeViewWindow.Move( 0, 0, FOLDER_TREE_VIEW_WINDOW_CLASS_WIDTH, nControlWindowHeight, TRUE );
+			g_fileListViewWindow.Move( nFileListViewWindowLeft, 0, nFileListViewWindowWidth, nControlWindowHeight, TRUE );
 
 			// Break out of switch
 			break;
@@ -278,14 +351,29 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 				} // End of notify message was not handled from folder tree view window
 
 			} // End of notify message is from folder tree view window
+			else if( lpNmHdr->hwndFrom == g_fileListViewWindow )
+			{
+				// Notify message is from file list view window
+
+				// Handle notify message from file list view window
+				if( !( g_fileListViewWindow.HandleNotifyMessage( wParam, lParam, &FileListViewWindowSelectionChangedFunction, &FileListViewWindowDoubleClickFunction, &FileListViewWindowCompareFunction ) ) )
+				{
+					// Notify message was not handled from file list view window
+
+					// Call default handler
+					lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
+
+				} // End of notify message was not handled from file list view window
+
+			} // End of notify message is from file list view window
 			else
 			{
-				// Notify message is not from folder tree view window
+				// Notify message is not from control window
 
 				// Call default handler
 				lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
 
-			} // End of notify message is not from folder tree view window
+			} // End of notify message is not from control window
 
 			// Break out of switch
 			break;
