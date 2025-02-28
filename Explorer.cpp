@@ -24,6 +24,17 @@ int CALLBACK FileListViewWindowCompareFunction( LPARAM lParam1, LPARAM lParam2, 
 	// Compare item texts
 	nResult = lstrcmpi( lpszItemText1, lpszItemText2 );
 
+	// See if the modified column is being sorted
+	if( lParamSort == FILE_LIST_VIEW_WINDOW_CLASS_MODIFIED_COLUMN_ID )
+	{
+		// The modified column is being sorted
+
+		// Invert result
+		nResult = ( 0 - nResult );
+		// To show most recent files first
+
+	} // End of the modified column is being sorted
+
 	// Free string memory
 	delete [] lpszItemText1;
 	delete [] lpszItemText2;
@@ -64,8 +75,22 @@ void FileListViewWindowDoubleClickFunction( LPCTSTR lpszItemPath )
 
 void FolderTreeViewWindowSelectionChangedFunction( LPTSTR lpszItemText )
 {
-	// Show item text on status bat window
-	g_statusBarWindow.SetText( lpszItemText );
+	int nFileCount;
+
+	// Allocate string memory
+	LPTSTR lpszStatusMessage = new char[ STRING_LENGTH + sizeof( char ) ];
+
+	// Populate file list view window
+	nFileCount = g_fileListViewWindow.Populate( lpszItemText, ALL_FILES_FILTER );
+
+	// Format status message
+	wsprintf( lpszStatusMessage, FILE_LIST_VIEW_WINDOW_CLASS_ADD_FILES_STATUS_MESSAGE_FORMAT_STRING, lpszItemText, nFileCount );
+
+	// Show status text on status bar window
+	g_statusBarWindow.SetText( lpszStatusMessage );
+
+	// Free string memory
+	delete [] lpszStatusMessage;
 
 } // End of function FolderTreeViewWindowSelectionChangedFunction
 
