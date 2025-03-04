@@ -29,8 +29,12 @@
 
 #define FOLDER_TREE_VIEW_WINDOW_CLASS_WIDTH										300
 
+#define FOLDERS_FILE_NAME														"Folders.txt"
+
 #define ABOUT_MESSAGE_TEXT														"Explorer\r\n"						\
 																				"\r\n"								\
 																				"Written by Jim Smith\r\n"			\
 																				"\r\n"								\
 																				"February 2025"
+
+#define UNABLE_TO_SAVE_FOLDERS_WARNING_MESSAGE									"Unable to Save Folders.\r\n\r\nDo You Want to Exit?"

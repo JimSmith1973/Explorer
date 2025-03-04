@@ -423,8 +423,30 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 		{
 			// A close message
 
-			// Destroy main window
-			DestroyWindow( hWndMain );
+			// Save folder tree view window
+			if( g_folderTreeViewWindow.Save( FOLDERS_FILE_NAME ) )
+			{
+				// Successfully saved folder tree view window
+
+				// Destroy main window
+				DestroyWindow( hWndMain );
+
+			} // End of successfully saved folder tree view window
+			else
+			{
+				// Unable to save folder tree view window
+
+				// Ensure that user is ok to continue
+				if( MessageBox( hWndMain, UNABLE_TO_SAVE_FOLDERS_WARNING_MESSAGE, WARNING_MESSAGE_CAPTION, ( MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2 ) ) == IDYES )
+				{
+					// User is ok to continue
+
+					// Destroy main window
+					DestroyWindow( hWndMain );
+
+				} // End of user is ok to continue
+
+			} // End of unable to save folder tree view window
 
 			// Break out of switch
 			break;
@@ -506,11 +528,49 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow )
 			// Update main window
 			mainWindow.Update();
 
-			// Add drives to folder tree view window
-			g_folderTreeViewWindow.AddDrives();
+			// Load folder tree view window
+			if( !( g_folderTreeViewWindow.Load( FOLDERS_FILE_NAME ) ) )
+			{
+				// Unable to load folder tree view window
 
-			// Select current folder on folder tree view window
-			g_folderTreeViewWindow.SelectFolder();
+				// Allocate strinng memory
+				LPTSTR lpszFolderPath = new char[ STRING_LENGTH + sizeof( char ) ];
+
+				// Get current folder path
+				if( GetCurrentDirectory( STRING_LENGTH, lpszFolderPath ) )
+				{
+					// Successfully got current folder path
+					HTREEITEM htiFolder;
+
+					// Add folder to folder tree view window
+					htiFolder = g_folderTreeViewWindow.InsertItem( lpszFolderPath );
+
+					// Ensure that folder was added to folder tree view window
+					if( htiFolder )
+					{
+						// Successfully added folder to folder tree view window
+
+						// Add dummy sub-item to folder tree view window
+						if( g_folderTreeViewWindow.InsertItem( lpszFolderPath, htiFolder ) )
+						{
+							// Successfully added dummy sub-item to folder tree view window
+
+							// Expand folder
+							g_folderTreeViewWindow.ExpandItem( htiFolder );
+
+							// Select folder
+							g_folderTreeViewWindow.SelectItem( htiFolder );
+
+						} // End of successfully added dummy sub-item to folder tree view window
+
+					} // End of successfully added folder to folder tree view window
+
+				} // End of successfully got current folder path
+
+				// Free string memory
+				delete [] lpszFolderPath;
+
+			} // End of unable to load folder tree view window
 
 			// Message loop
 			while( message.Get() > 0 )
